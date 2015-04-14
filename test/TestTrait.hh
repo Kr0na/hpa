@@ -34,7 +34,10 @@ trait TestTrait
                 $assetions = Vector {};
                 $this->assertions->add(Pair {$this->currentMethod, $assetions});
                 try {
-                    $method->invoke($this);
+                    $result = $method->invoke($this);
+                    if ($result instanceof Awaitable) {
+                        $result->join();
+                    }
                 } catch(Exception $e) {
                     $this->fails->add(Pair {$method->getName(), $e});
                     continue;
@@ -55,7 +58,14 @@ trait TestTrait
         foreach($this->fails as $method => $result)
         {
             echo 'Result of ' . $method . PHP_EOL;
-            var_dump($result);
+            if ($result instanceof Exception) {
+                echo 'Exception occured' . PHP_EOL;
+                echo 'Message: ' . $result->getMessage() . '. Code: ' . $result->getCode() . PHP_EOL;
+                echo 'Stach Trace: ' . PHP_EOL;
+                var_dump($result->getTrace());
+            } else {
+                var_dump($result);
+            }
         }
     }
 

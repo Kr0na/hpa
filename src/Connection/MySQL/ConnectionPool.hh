@@ -3,37 +3,27 @@
 namespace Krona\HPA\Connection\MySQL;
 
 use AsyncMysqlConnection;
+use AsyncMysqlConnectionPool;
 use AsyncMysqlClient;
 use Exception;
 use Krona\HPA\Configuration\ConnectionConfiguration;
 
 class ConnectionPool {
     protected ConnectionConfiguration $configuration;
-    protected Vector<AsyncMysqlConnection> $connections = Vector {};
+    protected AsyncMysqlConnectionPool $pool;
 
     public function __construct(ConnectionConfiguration $configuration) {
         $this->configuration = $configuration;
+        $this->pool = new AsyncMysqlConnectionPool([]);
     }
 
     public async function getConnection():Awaitable<AsyncMysqlConnection> {
-        try {
-            return $this->connections->pop();
-        } catch(Exception $e) {
-            return await $this->connect();
-        }
-    }
-
-    public async function connect():Awaitable<AsyncMysqlConnection> {
-        return await AsyncMysqlClient::connect(
+        return await $this->pool->connect(
             $this->configuration->getHost(),
             $this->configuration->getPort(),
             $this->configuration->getDbname(),
             $this->configuration->getUsername(),
-            $this->configuration->getPassword(),
+            $this->configuration->getPassword()
         );
-    }
-
-    public function free(AsyncMysqlConnection $connection):void {
-        $this->connections->add($connection);
     }
 }
